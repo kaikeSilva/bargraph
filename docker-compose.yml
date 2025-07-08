@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Servidor estático para o gráfico
+  # ---------------------------------------------------------------------------
+  bargraph:
+    image: nginx:alpine                   # imagem leve (≈3 MB)
+    container_name: bargraph
+    restart: always                       # reinicia caso falhe
+    volumes:
+      # monta a pasta onde está o index.html
+      - ./:/usr/share/nginx/html:ro
+    networks:
+      - traefik-public
+    labels:
+      # habilita o serviço no Traefik
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+
+      # ---------- HTTP (porta 80) ----------
+      - traefik.http.routers.bargraph-http.rule=Host(`graficos.quiropatecnologia.com.br`)
+      - traefik.http.routers.bargraph-http.entrypoints=http
+      - traefik.http.routers.bargraph-http.middlewares=https-redirect  # redireciona p/ HTTPS
+
+      # ---------- HTTPS (porta 443) ----------
+      - traefik.http.routers.bargraph-https.rule=Host(`graficos.quiropatecnologia.com.br`)
+      - traefik.http.routers.bargraph-https.entrypoints=https
+      - traefik.http.routers.bargraph-https.tls=true
+      - traefik.http.routers.bargraph-https.tls.certresolver=le        # Let’s Encrypt
+
+      # serviço interno (nginx escuta na 80)
+      - traefik.http.services.bargraph.loadbalancer.server.port=80
+
+networks:
+  traefik-public:
+    external: true                        # já criada pelo seu Traefik
