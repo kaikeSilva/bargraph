@@ -73,6 +73,17 @@ h1{
 }
 #updateBtn:hover{ opacity:.9; }
 
+/* ---------- Toggle switches ---------- */
+.toggle-group{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    font-weight:600;
+    margin-top:8px;
+}
+.toggle-group input{ cursor:pointer; }
+
 /* ---------- Legenda “pílula” ---------- */
 .legend{
     display:flex;
@@ -165,6 +176,12 @@ h1{
     white-space:nowrap;
 }
 
+/* ---------- Remover rótulos e espaço ---------- */
+.no-labels .chart-label,
+.no-labels .axis-label{
+    display:none;          /* some 210 px da esquerda */
+}
+
 /* ---------- Responsivo ---------- */
 @media(max-width:720px){
     .chart-label, .axis-label{ width:160px; }
@@ -176,6 +193,8 @@ h1{
 
 <!-- Painel -->
 <div class="config-panel">
+
+  <!-- Título do gráfico -->
   <div class="config-group" style="flex-basis:100%;">
     <label for="titleInput">Título do gráfico</label>
     <input type="text" id="titleInput" value="Participação Feminina nas Atrações – 2010">
@@ -218,7 +237,20 @@ h1{
     <input type="color" class="bar-color" value="#ff9933">
   </div>
 
-  <button id="updateBtn">Atualizar gráfico</button>
+  <!-- Toggles -->
+  <div class="config-group" style="flex-basis:100%; flex-direction:row; gap:24px; align-items:center;">
+    <label class="toggle-group">
+      <input type="checkbox" id="toggleLegend" checked>
+      Exibir legendas
+    </label>
+
+    <label class="toggle-group">
+      <input type="checkbox" id="toggleLabels" checked>
+      Exibir nomes das barras
+    </label>
+
+    <button id="updateBtn">Atualizar gráfico</button>
+  </div>
 </div>
 
 <h1 id="chartTitle">Participação Feminina nas Atrações – 2010</h1>
@@ -242,6 +274,8 @@ const chartTitle  = document.getElementById('chartTitle');
 const legendEl    = document.getElementById('legend');
 const chartEl     = document.getElementById('chart');
 const axisEl      = document.getElementById('axis');
+const toggleLegend = document.getElementById('toggleLegend');
+const toggleLabels = document.getElementById('toggleLabels');
 
 /* ---------- Helpers ---------- */
 function getConfigData(){
@@ -253,6 +287,8 @@ function getConfigData(){
 
 function renderLegend(data){
   legendEl.innerHTML = '';
+  if(!toggleLegend.checked){ legendEl.style.display='none'; return; }
+  legendEl.style.display='';
   data.forEach(d=>{
     const item = document.createElement('span');
     item.innerHTML = `<i style="background:${d.color}"></i>${d.name}`;
@@ -279,6 +315,10 @@ function renderAxis(max){
   }
 }
 
+function applyLabelVisibility(){
+  document.body.classList.toggle('no-labels', !toggleLabels.checked);
+}
+
 function renderChart(data){
   chartEl.innerHTML = '';
   const max = Math.max(...data.map(d=>d.value), 1); // evita div/0
@@ -294,6 +334,7 @@ function renderChart(data){
       <span class="chart-value">${d.value} (${((d.value/max)*100).toFixed(1)}%)</span>`;
     chartEl.appendChild(row);
   });
+  applyLabelVisibility();
   renderAxis(max);
 }
 
@@ -302,10 +343,13 @@ function update(){
   chartTitle.textContent = titleInput.value.trim() || 'Meu Gráfico';
   renderLegend(data);
   renderChart(data);
+  applyLabelVisibility();          /* garante estado correto na 1ª carga */
 }
 
 /* ---------- Eventos ---------- */
 updateBtn.addEventListener('click', update);
+toggleLegend.addEventListener('change', ()=>renderLegend(getConfigData()));
+toggleLabels.addEventListener('change', applyLabelVisibility);
 
 /* ---------- Primeira renderização ---------- */
 update();
